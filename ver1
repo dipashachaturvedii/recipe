@@ -1,0 +1,20 @@
+from selenium import webdriver
+from bs4 import BeautifulSoup
+import pandas as pd
+driver = webdriver.Chrome("/usr/lib/chromium-browser/chromedriver")
+food=[] #List to store name of the product
+recipe=[] #List to store recipe of the product
+ingredients=[] #List to store ingredient of the product
+driver.get("https://www.vegrecipesofindia.com/vada-pav-how-to-make-wada-pav/#wprm-recipe-container-134422")
+content = driver.page_source
+soup = BeautifulSoup(content)
+for a in soup.findAll('a',href=True, attrs={'class':'schema-faq wp-block-yoast-faq-block'}):
+  food=a.find('div', attrs={'class':'nutrition-recipe'})
+  recipe=a.find('div', attrs={'class':'wprm-recipe-notes'})
+  ingredients=a.find('div', attrs={'class':'wprm-recipe-ingredient-group'})
+  food.append(food.text)
+  recipe.append(recipe.text)
+  ingredients.append(ingredients.text) 
+import pandas as pd 
+df = pd.DataFrame({'Food':food,'Recipe':recipe,'Ingredients':ingredients}) 
+df.to_csv('food.csv', index=False, encoding='utf-8')
