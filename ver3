@@ -1,0 +1,78 @@
+#install all the requirements
+#pip install bs4 requests html5lib
+
+import requests
+from bs4 import BeautifulSoup
+url ="https://www.indianhealthyrecipes.com"
+#get html
+r = requests.get(url)
+htmlContent = r.content
+print(htmlContent)
+
+#parse html
+soup = BeautifulSoup(htmlContent, 'html.parser')
+print(soup.prettify)
+
+#traverse tree
+#commonly used types of object
+#1. Tag print(type(title))
+#2. NavigableString print(type(title.string))
+#3. BeautifulSoup print(type(soup))
+#4. Comment markup = "<p><!--this is a comment--></p>"
+#soup2 = BeautifulSoup(markup)
+#print(type(soup2.p.string))
+#exit()
+
+title = soup.title
+print(title)
+#get all anchor tags or script
+paras = soup.find_all('p')
+#print(paras)
+
+#print(soup.find('p').get_text)
+#print(soup.find('p')['class'])
+#find elements that have lead class
+#print(soup.find_all("p", class_="lead"))
+
+#get all links of page
+anchors = soup.find_all('a')
+print(anchors)
+print(soup.title)
+# Getting the name of the tag
+print(soup.title.name)
+ 
+# Getting the name of parent tag
+print(soup.title.parent.name)
+
+all_links = set()
+for link in anchors:
+         linkText = url + link.get('href')
+         all_links.add(linkText)
+         print(linkText)
+
+
+from recipe_scrapers import scrape_me
+from recipe_scrapers import scrape_html
+
+all_title= []
+all_ingredients= []
+all_nutrients= []     
+for link in all_links:
+       a = linkText
+       html = requests.get(a).content
+
+       scraper = scrape_html(html=html, org_url=url)
+
+       p= scraper.title()
+       s = scraper.ingredients()
+       n = scraper.nutrients() 
+       all_title.append(p)
+       all_ingredients.append(s)
+       all_nutrients.append(n)
+       print(p)
+       print(s) 
+       print(n)  
+ 
+import pandas as pd 
+df = pd.DataFrame({'Food':all_title,'Ingredients':all_ingredients,'Nutrients':all_nutrients}) 
+df.to_csv('food.csv', index=False, encoding='utf-8')
