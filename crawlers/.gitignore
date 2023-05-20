@@ -128,3 +128,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# test directories
+*tryv*
+*v4.0.1*
