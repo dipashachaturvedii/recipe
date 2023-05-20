@@ -45,7 +45,7 @@ def parse(*args, **kwargs):
         page_source = driver.page_source
         
         # Extract recipes from the page source
-        recipes = extract(page_source)
+        recipes = extract(page_source, driver)
 
         # If no recipes found, exit the loop
         if not recipes:
@@ -59,7 +59,7 @@ def parse(*args, **kwargs):
 
     driver.quit() # close driver
 
-def extract(page_source) -> dict:
+def extract(page_source, driver) -> dict:
     # Use BeautifulSoup to parse the page source and extract the data you need
     soup = BeautifulSoup(page_source, 'html.parser')
 
@@ -69,10 +69,10 @@ def extract(page_source) -> dict:
     new_data = {}
     for index, article in enumerate(recipe_articles):
         if index < 250:
-            new_data[index] = parse_result(article)
+            new_data[index] = parse_result(article, driver)
     return new_data
 
-def parse_result(article) -> dict:
+def parse_result(article, driver) -> dict:
     recipe_data = {}
 
     recipe_data["crawled_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -83,4 +83,32 @@ def parse_result(article) -> dict:
     recipe_data["href"] = safe_parsing(article.find('a', href=True).get('href'))
     recipe_data["image"] = safe_parsing(article.find('img').get('src'))
 
+    # Navigate to the recipe page
+    driver.get(recipe_data["href"])
+    recipe_page_source = driver.page_source
+
+    # Extract additional information from the recipe page
+    additional_info = extract_additional_info(recipe_page_source)
+    recipe_data.update(additional_info)
+
     return recipe_data
+
+def extract_additional_info(recipe_page_source) -> dict:
+    # Use BeautifulSoup to parse the recipe page source and extract additional information
+    sup = BeautifulSoup(recipe_page_source, 'html.parser')
+
+    additional_info = {}
+
+    # Extract description
+    description = safe_parsing(sup.find('div', class_='wprm-recipe-summary wprm-block-text-normal'))
+    additional_info["description"] = description
+
+    # Extract ingredients
+    ingredients = []
+    ingredient_elements = sup.find_all('li', class_='wprm-recipe-ingredient')
+    for ingredient_element in ingredient_elements:
+        ingredient = safe_parsing(ingredient_element)
+        ingredients.append(ingredient)
+    additional_info["ingredients"] = ingredients
+
+    return additional_info
