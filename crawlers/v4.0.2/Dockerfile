@@ -28,4 +28,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# CMD ["python", "scrapers/main.py"]
+CMD ["python", "scrapers/main.py"]
