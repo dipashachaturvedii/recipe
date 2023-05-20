@@ -1,28 +1,29 @@
 import datetime
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from data_processing import save_to_json
 from utils import safe_parsing
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
+# from webdriver_manager.chrome import ChromeDriverManager
 
 
 def parse(*args, **kwargs):
     base_url = "https://www.vegrecipesofindia.com/recipes/?fwp_recipe_cuisines=indian"
+    page = 1
 
     # Set up Chrome options
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Run in headless mode to avoid opening a browser window
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
     # Set up the Chrome driver executable path (update it to match your system)
-    webdriver_service = Service(ChromeDriverManager().install())
+    # webdriver_service = Service(ChromeDriverManager().install())
+    webdriver_service = Service('/usr/local/bin/chromedriver')
 
     try:
         # Launch the Chrome browser with the configured options
@@ -31,19 +32,32 @@ def parse(*args, **kwargs):
         print("Encountered an exception!")
         raise err
     
-    # Navigate to the URL
-    driver.get(base_url)
+    # Pagination
+    while True:
+        page_url = f"{base_url}&fwp_paged={page}"
+        # Navigate to the URL
+        driver.get(page_url)
 
-    # Use explicit wait to wait for recipe elements to load
-    wait = WebDriverWait(driver, 20)
+        # Use explicit wait to wait for recipe elements to load
+        wait = WebDriverWait(driver, 4)
 
-    # Get the page source (which will contain the dynamically generated content)
-    page_source = driver.page_source
+        # Get the page source (which will contain the dynamically generated content)
+        page_source = driver.page_source
+        
+        # Extract recipes from the page source
+        recipes = extract(page_source)
+
+        # If no recipes found, exit the loop
+        if not recipes:
+            break
+
+        # Save the recipes to JSON or perform any other processing
+        save_to_json(recipes)
+        print(recipes)
+
+        page += 1
+
     driver.quit() # close driver
-    
-    recipes = extract(page_source)
-    save_to_json(recipes)
-    print(recipes)
 
 def extract(page_source) -> dict:
     # Use BeautifulSoup to parse the page source and extract the data you need
